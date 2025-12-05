@@ -36,14 +36,23 @@ void readFileUsingCallbackStreams() {
       // The onError callback is executed if an error occurs while reading the file.
       print('Error: $e');
     },
+    cancelOnError:
+        false, // If set to true, the subscription will be canceled upon encountering an error.
   );
 }
 
 Future<void> readFileUsingStreamsWithAsyncForInLoop() async {
-  final file = File('assets/text_long.txt');
-  final stream = file.openRead();
+  try {
+    final file = File('assets/text_long.txt');
+    final stream = file.openRead();
 
-  await for (final data in stream) {
-    print(data.length);
+    // The await for loop is used to asynchronously iterate over each chunk of data emitted by the stream.
+    await for (final data in stream) {
+      print(data.length);
+    }
+  } on Exception catch (e) {
+    print(e);
+  } finally {
+    print('All finished.');
   }
 }
