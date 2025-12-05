@@ -2,7 +2,8 @@ import 'dart:io';
 
 Future<void> main() async {
   // await readFileUsingFutures();
-  readFileUsingStreams();
+  // readFileUsingCallbackStreams();
+  readFileUsingStreamsWithAsyncForInLoop();
 }
 
 Future<void> readFileUsingFutures() async {
@@ -14,7 +15,7 @@ Future<void> readFileUsingFutures() async {
   print(contents);
 }
 
-void readFileUsingStreams() {
+void readFileUsingCallbackStreams() {
   final file = File('assets/text_long.txt');
   final stream = file
       .openRead(); // openRead , which returns an object of type Stream<List<int>>. This creates a readable stream of the file's content. // by default, this stream is a single-subscription stream.
@@ -36,4 +37,13 @@ void readFileUsingStreams() {
       print('Error: $e');
     },
   );
+}
+
+Future<void> readFileUsingStreamsWithAsyncForInLoop() async {
+  final file = File('assets/text_long.txt');
+  final stream = file.openRead();
+
+  await for (final data in stream) {
+    print(data.length);
+  }
 }
