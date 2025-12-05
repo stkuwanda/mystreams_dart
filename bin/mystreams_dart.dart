@@ -7,8 +7,11 @@ Future<void> main() async {
   // readFileUsingCallbackStreams();
   // readFileUsingCallbackStreamsAndCancelStreamSubscriptions();
   // readFileUsingStreamsWithAsyncForInLoop();
-  runTransformStream();
-  runAPeriodicStream();
+  // runTransformStream();
+  // runAPeriodicStream();
+  // runCustomStreamsFromFeatures();
+  // runCustomStreamsFromAsyncGenerator();
+  runCustomStreamsUsingStreamController();
 }
 
 Future<void> readFileUsingFutures() async {
@@ -117,4 +120,63 @@ Future<void> runAPeriodicStream() async {
   await for (var data in stream) {
     print(data);
   }
+}
+
+void runCustomStreamsFromFeatures() {
+  // Create a stream from multiple futures using Stream.fromFutures
+  final first = Future(() => 'Row');
+  final second = Future(() => 'row');
+  final third = Future(() => 'row');
+  final fourth = Future.delayed(Duration(milliseconds: 300), () => 'your boat');
+
+  // Stream.fromFutures takes a list of futures and returns a stream that emits the results of those futures as they complete.
+  final stream = Stream<String>.fromFutures([first, second, third, fourth]);
+  stream.listen(
+    print,
+  ); // Listen to the stream and print each value as it is emitted.
+}
+
+void runCustomStreamsFromAsyncGenerator() {
+  final stream =
+      consciousnessAsyncGenerator(); // Call the custom async generator function to create the stream.
+
+  stream.listen(
+    print,
+  ); // Listen to the stream and print each value as it is emitted.
+}
+
+// Custom Stream using Async Generator
+Stream<String> consciousnessAsyncGenerator() async* {
+  const data = ['con', 'scious', 'ness'];
+
+  for (final part in data) {
+    // Simulate some asynchronous operation with a delay.
+    await Future<void>.delayed(Duration(microseconds: 300));
+    yield part; // Yield each part of the data to the stream.
+  }
+}
+
+// Custom Stream using StreamController
+void runCustomStreamsUsingStreamController() {
+  final controller =
+      StreamController<
+        String
+      >(); // Create a StreamController to manage the stream and sink.
+  final stream = controller.stream; // Get the stream from the controller.
+  final sink = controller.sink; // Get the sink from the controller.
+
+  // Listen to the stream and handle data, errors, and completion.
+  stream.listen(
+    (value) => print(value),
+    onError: (Object error) => print(error),
+    onDone: () => print('Sink closed'),
+  );
+
+  // Add data and errors to the sink.
+  sink.add('grape');
+  sink.add('grape');
+  sink.add('grape');
+  sink.addError(Exception('cherry'));
+  sink.add('grape');
+  sink.close();
 }
