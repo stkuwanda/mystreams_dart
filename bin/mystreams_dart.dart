@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 Future<void> main() async {
   // await readFileUsingFutures();
   // readFileUsingCallbackStreams();
-  readFileUsingCallbackStreamsAndCancelStreamSubscriptions();
-  //readFileUsingStreamsWithAsyncForInLoop();
+  // readFileUsingCallbackStreamsAndCancelStreamSubscriptions();
+  // readFileUsingStreamsWithAsyncForInLoop();
+  runTransformStream();
+  runAPeriodicStream();
 }
 
 Future<void> readFileUsingFutures() async {
@@ -28,7 +31,8 @@ void readFileUsingCallbackStreams() {
       // // The listen method is used to listen for data events from the stream. Each time a chunk of data is available, the provided callback function is executed with that chunk.
       // final contents = String.fromCharCodes(data); // Convert the List<int> to a String using String.fromCharCodes.
       // print(contents); // Print the contents of the chunk to the console.
-      print(data.length);
+      // print(data.length);
+      print(data);
     },
     onDone: () {
       // The onDone callback is executed when the stream has finished sending all its data.
@@ -86,5 +90,31 @@ Future<void> readFileUsingStreamsWithAsyncForInLoop() async {
     print(e);
   } finally {
     print('All finished.');
+  }
+}
+
+// Transform Streams
+Future<void> runTransformStream() async {
+  final file = File('assets/text.txt');
+  final byteStream = file
+      .openRead(); // This creates a stream of bytes (List<int>).
+  final stringStream = byteStream.transform(
+    utf8.decoder,
+  ); // utf8.decoder is a built-in transformer that converts a stream of bytes (List<int>) into a stream of strings (String) from the dart:convert library.
+
+  // use an await for loop to read the transformed string stream.
+  await for (var data in stringStream) {
+    print(data);
+  }
+}
+
+Future<void> runAPeriodicStream() async {
+  final stream = Stream<int>.periodic(
+    Duration(seconds: 1),
+    (value) => value,
+  ).take(10); // Stream that emits an integer every second, up to 10 values.
+
+  await for (var data in stream) {
+    print(data);
   }
 }
