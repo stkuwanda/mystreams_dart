@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 Future<void> main() async {
   // await readFileUsingFutures();
   // readFileUsingCallbackStreams();
-  readFileUsingStreamsWithAsyncForInLoop();
+  readFileUsingCallbackStreamsAndCancelStreamSubscriptions();
+  //readFileUsingStreamsWithAsyncForInLoop();
 }
 
 Future<void> readFileUsingFutures() async {
@@ -27,6 +29,36 @@ void readFileUsingCallbackStreams() {
       // final contents = String.fromCharCodes(data); // Convert the List<int> to a String using String.fromCharCodes.
       // print(contents); // Print the contents of the chunk to the console.
       print(data.length);
+    },
+    onDone: () {
+      // The onDone callback is executed when the stream has finished sending all its data.
+      print('File reading completed.');
+    },
+    onError: (e) {
+      // The onError callback is executed if an error occurs while reading the file.
+      print('Error: $e');
+    },
+    cancelOnError:
+        false, // If set to true, the subscription will be canceled upon encountering an error.
+  );
+}
+
+void readFileUsingCallbackStreamsAndCancelStreamSubscriptions() {
+  final file = File('assets/text_long.txt');
+  final stream = file
+      .openRead(); // openRead , which returns an object of type Stream<List<int>>. This creates a readable stream of the file's content. // by default, this stream is a single-subscription stream.
+  // final broadcastStream = stream.asBroadcastStream(); // Convert the single-subscription stream to a broadcast stream.
+
+  StreamSubscription<List<int>>?
+  subscription; // Declare a StreamSubscription variable to hold the subscription.
+  subscription = stream.listen(
+    (List<int> data) {
+      // // The listen method is used to listen for data events from the stream. Each time a chunk of data is available, the provided callback function is executed with that chunk.
+      // final contents = String.fromCharCodes(data); // Convert the List<int> to a String using String.fromCharCodes.
+      // print(contents); // Print the contents of the chunk to the console.
+      print(data.length);
+      subscription
+          ?.cancel(); // Cancel the subscription after receiving the first chunk of data.
     },
     onDone: () {
       // The onDone callback is executed when the stream has finished sending all its data.
