@@ -1,32 +1,37 @@
-Future<void> main() async {
-  print('isolates');
+import 'dart:isolate';
 
-  // Simulate a long-running task.
-  print(await playHideAndSeekTheLongVersionFutures());
-}
-
-// A function that simulates a long-running task.
-String playHideAndSeekTheLongVersion() {
+// entry-point of the new isolate
+// this is the code that runs in the new isolate
+// it takes a SendPort as an argument to communicate back to the main isolate
+void playHideAndSeekTheLongVersion(SendPort sendPort) {
   var counting = 0;
 
-  // Simulate a long computation by counting to a large number.
-  for (var i = 1; i <= 10000000000; i++) {
+  for (var i = 1; i <= 1000000000; i++) {
     counting = i;
   }
 
-  return '$counting! Ready or not, here I come!';
+  // set a message for the main isolate
+  final message = '$counting! Ready or not, here I come!';
+
+  Isolate.exit(
+    sendPort,
+    message,
+  ); // Send a message back to the main isolate and terminate isolate
 }
 
-// An asynchronous version of the long-running task using Future.
-Future<String> playHideAndSeekTheLongVersionFutures() async {
-  var counting = 0;
+Future<void> main() async {
+  final receivePort = ReceivePort(); // Create a ReceivePort to receive messages from the new isolate.
 
-  // Simulate a long computation by counting to a large number asynchronously.
-  await Future(() {
-    for (var i = 1; i <= 10000000000; i++) {
-      counting = i;
-    }
-  });
+  // Spawn a new isolate, passing the entry-point function and the SendPort of the ReceivePort.
+  // Specifying SendPort as the generic type parameter tells Dart the type of the entry-point function parameter.
+  await Isolate.spawn<SendPort>(
+    playHideAndSeekTheLongVersion, // The first argument of Isolate.spawn is the entry-point function. That function must be a top-level or static function. It must also take a single argument.
+    receivePort.sendPort, // The second argument of Isolate.spawn is the argument for the entry-point function. In this case, it’s a SendPort object.
+  );
 
-  return '$counting! Ready or not, here I come!';
+  // ReceivePort implements the Stream interface, so you can treat it like a stream. Calling await
+  // receivePort.first waits for the first message coming in the stream and then cancels the stream subscription.
+  // playHideAndSeekTheLongVersion only sends a single message; all we need to wait for.
+  final message = await receivePort.first as String;
+  print(message);
 }
