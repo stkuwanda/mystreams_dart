@@ -32,7 +32,51 @@ void playHideAndSeekTheLongVersionMultipleMessages(SendPort sendPort) {
   sendPort.send(
     '$counting! Ready or not, here I come!',
   ); // send the final message
-  
+
+  sendPort.send(null); // send null to indicate completion
+}
+
+// entry-point
+// this runs in a new isolate
+// the entry-point function/method must alway have one argument so using
+// a list is a way to allow more arguments into the function
+void playHideAndSeekTheLongVersionArgumentList(List<Object> args) {
+  final sendPort = args[0] as SendPort;
+  final countTo = args[1] as int;
+  var counting = 0;
+
+  sendPort.send("OK, I'm counting..."); // send an initial message
+
+  for (var i = 1; i <= countTo; i++) {
+    counting = i;
+  }
+
+  sendPort.send(
+    '$counting! Ready or not, here I come!',
+  ); // send the final message
+
+  sendPort.send(null); // send null to indicate completion
+}
+
+// entry-point
+// this runs in a new isolate
+// the entry-point function/method must alway have one argument so using
+// a Map is a way to allow more arguments into the function
+void playHideAndSeekTheLongVersionArgumentMap(Map<String, Object> args) {
+  final sendPort = args['sendPort'] as SendPort;
+  final countTo = args['countTo'] as int;
+  var counting = 0;
+
+  sendPort.send("OK, I'm counting..."); // send an initial message
+
+  for (var i = 1; i <= countTo; i++) {
+    counting = i;
+  }
+
+  sendPort.send(
+    '$counting! Ready or not, here I come!',
+  ); // send the final message
+
   sendPort.send(null); // send null to indicate completion
 }
 
@@ -63,7 +107,53 @@ Future<void> runOnewWayMultiMessageIsolate(ReceivePort receivePort) async {
   // Listen for messages from the new isolate.
   // Because receivePort is a stream, you can listen to it like any other stream
   receivePort.listen((Object? message) {
-    // If the message is a string, you just print it. But if the message is null, 
+    // If the message is a string, you just print it. But if the message is null,
+    // that’s the signal to close the receive port and shut down the isolate.
+    if (message is String) {
+      print(message);
+    } else if (message == null) {
+      receivePort.close(); // Close the receive port
+      isolate.kill(); // Terminate the isolate
+    }
+  });
+}
+
+Future<void> runOnewWayMultiMessageIsolateArgumentList(
+  ReceivePort receivePort,
+) async {
+  // Spawn a new isolate, passing the entry-point function and the SendPort of the ReceivePort.
+  final isolate = await Isolate.spawn<List<Object>>(
+    playHideAndSeekTheLongVersionArgumentList,
+    [receivePort.sendPort, 999999999],
+  );
+
+  // Listen for messages from the new isolate.
+  // Because receivePort is a stream, you can listen to it like any other stream
+  receivePort.listen((Object? message) {
+    // If the message is a string, you just print it. But if the message is null,
+    // that’s the signal to close the receive port and shut down the isolate.
+    if (message is String) {
+      print(message);
+    } else if (message == null) {
+      receivePort.close(); // Close the receive port
+      isolate.kill(); // Terminate the isolate
+    }
+  });
+}
+
+Future<void> runOnewWayMultiMessageIsolateArgumentMap(
+  ReceivePort receivePort,
+) async {
+  // Spawn a new isolate, passing the entry-point function and the SendPort of the ReceivePort.
+  final isolate = await Isolate.spawn<Map<String, Object>>(
+    playHideAndSeekTheLongVersionArgumentMap,
+    {'sendPort': receivePort.sendPort, 'countTo': 999999999},
+  );
+
+  // Listen for messages from the new isolate.
+  // Because receivePort is a stream, you can listen to it like any other stream
+  receivePort.listen((Object? message) {
+    // If the message is a string, you just print it. But if the message is null,
     // that’s the signal to close the receive port and shut down the isolate.
     if (message is String) {
       print(message);
@@ -75,7 +165,10 @@ Future<void> runOnewWayMultiMessageIsolate(ReceivePort receivePort) async {
 }
 
 void main() {
-  final receivePort = ReceivePort(); // Create a ReceivePort to receive messages from the new isolate.
+  final receivePort =
+      ReceivePort(); // Create a ReceivePort to receive messages from the new isolate.
   // runOneWaySingleMessageIsolate(receivePort);
-  runOnewWayMultiMessageIsolate(receivePort);
+  // runOnewWayMultiMessageIsolate(receivePort);
+  // runOnewWayMultiMessageIsolateArgumentList(receivePort);
+  runOnewWayMultiMessageIsolateArgumentMap(receivePort);
 }
