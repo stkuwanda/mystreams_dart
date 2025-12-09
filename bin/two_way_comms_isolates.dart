@@ -26,10 +26,40 @@ class Earth {
   Future<void> contactMoon() async {
     if (_moonIsolate != null) return; // already contacted the Moon
 
-    // Spawn the Moon isolate, passing it the send port of Earth’s receive port
-    _moonIsolate = await Isolate.spawn<SendPort>(_entryPoint, _receiveOnEarth.sendPort);
+    // Spawn the Moon isolate, passing it the send port of Earth’s receive port.
+    // Isolate.spawn assigns a value to _moonIsolate.
+    // Provide the Moon _entryPoint function with a send port as an argument.
+    _moonIsolate = await Isolate.spawn<SendPort>(
+      _entryPoint,
+      _receiveOnEarth.sendPort,
+    );
 
-    // TODO: add listener
+    _receiveOnEarth.listen((Object? messageFromMoon) async {
+      await Future<void>.delayed(Duration(seconds: 1));
+      print('Message from Moon: $messageFromMoon');
+
+      // the first message received in this message stream should be of type SendPort.
+      // this is the messaging link to the Moon, and so saved as a reference to it in _sendToMoonPort field
+      if (messageFromMoon is SendPort) {
+        _sendToMoonPort = messageFromMoon;
+        _sendToMoonPort?.send('Hey from Earth');
+      } else if (messageFromMoon == 'Hey from the Moon') {
+        _sendToMoonPort?.send('Can you help?');
+      } else if (messageFromMoon == 'sure') {
+        _sendToMoonPort?.send('doSomething');
+        _sendToMoonPort?.send('doSomethingElse');
+      } else if (messageFromMoon is Map) {
+        final method = messageFromMoon['method'] as String;
+        final result = messageFromMoon['result'] as int;
+        print('The result of $method is $result');
+      } else if (messageFromMoon == 'done') {
+        print('shutting down');
+        dispose();
+      } else {
+        print('mission failure, aborting...');
+        dispose();
+      }
+    });
   }
 
   // When work is finished on the Moon, a call to dispose will shut the isolate down and clean up the resources.
@@ -77,4 +107,11 @@ Future<void> _entryPoint(SendPort sendToEarthPort) async {
   });
 }
 
-void main() {}
+Future<void> runEarthToMoonMission() async {
+  final earth = Earth();
+  await earth.contactMoon();
+}
+
+void main() {
+  runEarthToMoonMission();
+}
