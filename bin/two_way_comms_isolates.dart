@@ -17,11 +17,20 @@ class Work {
 
 // Earth encapsulates all the isolate communication code. It represents the main isolate.
 class Earth {
-  final _receiveOnEarth = ReceivePort(); // a receive port to listen to messages from the Moon child isolate
-  SendPort? _sendToMoonPort; // a send port to send messages back to the Moon. The Moon will give this send port later after the  Moon isolate is spawned
+  final _receiveOnEarth =
+      ReceivePort(); // a receive port to listen to messages from the Moon child isolate
+  SendPort?
+  _sendToMoonPort; // a send port to send messages back to the Moon. The Moon will give this send port later after the  Moon isolate is spawned
   Isolate? _moonIsolate; // reference to the Moon isolate
 
-  // TODO: create moon isolate
+  Future<void> contactMoon() async {
+    if (_moonIsolate != null) return; // already contacted the Moon
+
+    // Spawn the Moon isolate, passing it the send port of Earth’s receive port
+    _moonIsolate = await Isolate.spawn<SendPort>(_entryPoint, _receiveOnEarth.sendPort);
+
+    // TODO: add listener
+  }
 
   // When work is finished on the Moon, a call to dispose will shut the isolate down and clean up the resources.
   void dispose() {
