@@ -52,7 +52,117 @@ void runConvertSingleSubscripptionStreamToBroadcastStream() {
   });
 }
 
+// Example of pseudo-broadcast Stream with async/await and cancellation
+// This is a more advanced example demonstrating multiple listeners,
+// but is not a genuine example of a broadcast stream since it uses async/await.
+// However, it shows how to manage multiple listeners with cancellation.
+void runBroadcastStreamWithAsyncAwait() async {
+  // Create a single-subscription stream
+  Stream<int> numbers = Stream.fromIterable([1, 2, 3]);
+
+  // Convert to broadcast stream with callbacks
+  Stream<int> broadcastNumbers = numbers;
+
+  // Convert to broadcast stream with callbacks
+  // Stream<int> broadcastNumbers = numbers.asBroadcastStream(
+  //   onListen: (subscription) {
+  //     print('A listener subscribed!');
+  //   }, // Callback when a listener subscribes
+  //   onCancel: (subscription) {
+  //     print('A listener unsubscribed!');
+  //   }, // Callback when a listener unsubscribes
+  // );
+
+  // Listener 1: consumes the entire stream using await for
+  Future<void> listener1() async {
+    await for (final n in broadcastNumbers) {
+      print('Listener 1 got: $n');
+    }
+
+    print('Listener 1 completed');
+  }
+
+  // Listener 2: subscribes, consumes two events, then unsubscribes (cancel)
+  // StreamIterator gives us explicit control and a cancel() method while still using async/await.
+  Future<void> listener2() async {
+    final it = StreamIterator(
+      broadcastNumbers,
+    ); // Create a StreamIterator to manage the subscription
+    var count = 0; // Count of events received
+
+    while (await it.moveNext()) {
+      print('Listener 2 got: ${it.current}');
+      count++;
+      if (count == 2) {
+        await it.cancel(); // Triggers onCancel
+        print('Listener 2 cancelled after two events');
+        break;
+      }
+    }
+  }
+
+  // Second async listener
+  Future<void> listener3() async {
+    await for (var n in broadcastNumbers) {
+      print('Listener 3 got: $n');
+    }
+
+    print('Listener 3 completed');
+  }
+
+  // Run both listeners concurrently
+  await Future.wait([
+    listener1(),
+    listener2(),
+    listener3(),
+  ]); // Wait for both listeners to complete
+
+  print('All listeners done');
+}
+
+// This function demonstrates a genuine broadcast stream with subscription listening and cancellation callbacks.
+void runBroadcastWithSubscriptionListeningAndCancellation() {
+  // Create a single-subscription stream
+  Stream<int> numbers = Stream.fromIterable([1, 2, 3]);
+
+  // Convert to broadcast stream with callbacks
+  Stream<int> broadcastNumbers = numbers.asBroadcastStream(
+    onListen: (subscription) {
+      print('A listener subscribed!');
+    },
+    onCancel: (subscription) {
+      print('A listener unsubscribed!');
+    },
+  );
+
+  // First listener
+  broadcastNumbers.listen(
+    (n) {
+      print('Listener 1 got: $n');
+    },
+    onDone: () {
+      print('Listener 1 done');
+    },
+  );
+
+  // Second listener: cancels after receiving 2 events
+  StreamSubscription<int>? sub2;
+  int count = 0;
+
+  sub2 = broadcastNumbers.listen((n) {
+    print('Listener 2 got: $n');
+    count++;
+    
+    if (count == 2) {
+      sub2?.cancel(); // triggers onCancel
+      print('Listener 2 cancelled after 2 events');
+    }
+  });
+}
+
 void main() {
   // runBroadcastStreamWithController();
-  runConvertSingleSubscripptionStreamToBroadcastStream();
+  // runConvertSingleSubscripptionStreamToBroadcastStream();
+  // runBroadcastStreamWithAsyncAwait();
+  runBroadcastWithSubscriptionListeningAndCancellation();
 }
