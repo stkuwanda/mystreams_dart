@@ -28,7 +28,7 @@ void runBroadcastStreamWithController() {
       .close(); // Always close the controller when done to free resources. This will also close the stream.
 }
 
-void runConvertSingleSubscripptionStreamToBroadcastStream() {
+void runConvertSingleSubscriptionStreamToBroadcastStream() {
   // Create a single-subscription stream
   Stream<int> numbers = Stream.fromIterable(
     [1, 2, 3],
