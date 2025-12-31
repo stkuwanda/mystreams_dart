@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:http/http.dart' as http;
 
 Future<void> main() async {
   // await readFileUsingFutures();
@@ -11,7 +12,47 @@ Future<void> main() async {
   // runAPeriodicStream();
   // runCustomStreamsFromFeatures();
   // runCustomStreamsFromAsyncGenerator();
-  runCustomStreamsUsingStreamController();
+  // runCustomStreamsUsingStreamController();
+  runTransFormStreamWithHttp();
+}
+
+Future<void> runTransFormStreamWithHttp() async {
+  final url = Uri.parse('https://kodeco.com');
+  final client = http.Client(); // Create an HTTP client to manage the request.
+
+  try {
+    final request = http.Request('GET', url); // Create an HTTP GET request.
+    final response = await client.send(request); // Send the request and await the streamed response.
+
+    // Transform the byte stream into UTF-8 strings
+    await response.stream
+        .map((chunk) {
+          // Log the size of each chunk
+          print('Received chunk: ${chunk.length} bytes');
+          // Convert bytes to string
+          return utf8.decode(chunk);
+        })
+        .listen(
+          (data) {
+            // Print a preview of the decoded string
+            print(
+              '$data',
+            );
+          },
+          onError: (error) {
+            print('Error while streaming: $error');
+          },
+          onDone: () {
+            print('Stream finished successfully.');
+          },
+        )
+        .asFuture(); // Ensures we await until the stream completes
+  } catch (e) {
+    print('Request failed: $e');
+  } finally {
+    client.close();
+    print('HTTP client closed.');
+  }
 }
 
 Future<void> readFileUsingFutures() async {
