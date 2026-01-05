@@ -36,7 +36,7 @@ Future<void> runTransFormStreamWithHttp() async {
           (data) {
             // Print a preview of the decoded string
             print(
-              '$data',
+              data,
             );
           },
           onError: (error) {
